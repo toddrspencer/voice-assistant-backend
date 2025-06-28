@@ -1,15 +1,17 @@
 {
   "name": "retell-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Voice assistant backend for Retell and email automation",
+  "main": "dist/server.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.backend.json",
+    "start": "node dist/server.js",
+    "dev": "ts-node server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
@@ -20,8 +22,12 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
+    "@types/body-parser": "^1.19.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/imap-simple": "^4.2.10",
     "@types/mailparser": "^3.4.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }
