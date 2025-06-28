@@ -36,7 +36,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchUnreadEmails = fetchUnreadEmails;
 var imap_simple_1 = require("imap-simple");
 var mailparser_1 = require("mailparser");
 var dotenv = require("dotenv");
@@ -147,7 +146,7 @@ function fetchUnreadEmails() {
                     return [4 /*yield*/, connection.end()];
                 case 5:
                     _a.sent();
-                    return [2 /*return*/, emails.filter(Boolean)]; // Filter out any nulls
+                    return [2 /*return*/, emails.filter(Boolean)]; // Remove nulls
                 case 6:
                     err_1 = _a.sent();
                     console.error('❌ Email fetch failed:', err_1.message);
@@ -157,3 +156,4 @@ function fetchUnreadEmails() {
         });
     });
 }
+exports.default = fetchUnreadEmails;

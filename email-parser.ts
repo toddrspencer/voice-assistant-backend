@@ -38,7 +38,7 @@ function isUnimportant(email: any): boolean {
 }
 
 // 📥 Main email fetch + extraction (only emails from last 24 hours)
-export async function fetchUnreadEmails() {
+async function fetchUnreadEmails() {
   try {
     const connection = await imaps.connect({ imap: config.imap });
     await connection.openBox('INBOX');
@@ -92,9 +92,11 @@ export async function fetchUnreadEmails() {
     }));
 
     await connection.end();
-    return emails.filter(Boolean); // Filter out any nulls
+    return emails.filter(Boolean); // Remove nulls
   } catch (err: any) {
     console.error('❌ Email fetch failed:', err.message);
     return [];
   }
 }
+
+export default fetchUnreadEmails;
