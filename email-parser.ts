@@ -1,4 +1,3 @@
-const imaps = require('imap-simple') as typeof import('imap-simple');
 import { simpleParser } from 'mailparser';
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -44,6 +43,7 @@ function isUnimportant(email: any): boolean {
 
 async function fetchUnreadEmails(): Promise<any[]> {
   try {
+    const imaps = (await import('imap-simple')).default;
     const connection: ImapSimple = await imaps.connect(config);
     await connection.openBox('INBOX');
     console.log('📥 Connected to INBOX');
