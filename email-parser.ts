@@ -55,7 +55,7 @@ async function fetchUnreadEmails(): Promise<any[]> {
     console.log('📥 Connected to INBOX');
 
     const searchCriteria = ['UNSEEN'];
-    const fetchOptions = { bodies: ['HEADER', 'TEXT'], struct: true, markSeen: false };
+    const fetchOptions = { bodies: [''], struct: true, markSeen: false }; // fetch full raw email
     const results: Message[] = await connection.search(searchCriteria, fetchOptions);
 
     console.log(`🔍 Found ${results.length} unread message(s)`);
@@ -72,7 +72,7 @@ async function fetchUnreadEmails(): Promise<any[]> {
     console.log(`⏱ After date filter: ${filteredResults.length} message(s)`);
 
     const emails = await Promise.all(filteredResults.map(async (res) => {
-      const part = res.parts.find(p => p.which === 'TEXT');
+      const part = res.parts.find(p => p.which === '');
       if (!part || !part.body || typeof part.body !== 'string') {
         console.warn('⚠️ Skipping malformed email part:', part);
         return null;
