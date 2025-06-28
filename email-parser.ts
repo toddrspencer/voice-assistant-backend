@@ -1,12 +1,15 @@
-import imaps from 'imap-simple';
+import imaps, { ImapSimple, Message, ImapSimpleOptions } from 'imap-simple';
 import { simpleParser } from 'mailparser';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-const config = {
+const password = process.env.ICLOUD_APP_PASSWORD;
+if (!password) throw new Error('Missing ICLOUD_APP_PASSWORD in .env');
+
+const config: ImapSimpleOptions = {
   imap: {
     user: 'toddr.spencer@icloud.com',
-    password: process.env.ICLOUD_APP_PASSWORD,
+    password,
     host: 'imap.mail.me.com',
     port: 993,
     tls: true,
@@ -38,19 +41,19 @@ function isUnimportant(email: any): boolean {
 }
 
 // 📥 Main email fetch + extraction (only emails from last 24 hours)
-async function fetchUnreadEmails() {
+async function fetchUnreadEmails(): Promise<any[]> {
   try {
-    const connection = await imaps.connect({ imap: config.imap });
+    const connection: ImapSimple = await imaps.connect(config);
     await connection.openBox('INBOX');
 
     const searchCriteria = ['UNSEEN'];
     const fetchOptions = { bodies: ['HEADER', 'TEXT'], struct: true, markSeen: false };
-    const results = await connection.search(searchCriteria, fetchOptions);
+    const results: Message[] = await connection.search(searchCriteria, fetchOptions);
 
     const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
 
-    const filteredResults = results.filter(res => {
-      const headerPart = res.parts.find(p => p.which === 'HEADER');
+    const filteredResults = results.filter((res: any) => {
+      const headerPart = res.parts.find((p: any) => p.which === 'HEADER');
       if (!headerPart?.body || typeof headerPart.body !== 'string') return false;
 
       const dateMatch = headerPart.body.match(/Date: (.+)/i);
@@ -60,8 +63,8 @@ async function fetchUnreadEmails() {
       return !isNaN(parsedDate.getTime()) && parsedDate.getTime() >= twentyFourHoursAgo;
     });
 
-    const emails = await Promise.all(filteredResults.map(async res => {
-      const part = res.parts.find(p => p.which === 'TEXT');
+    const emails = await Promise.all(filteredResults.map(async (res: any) => {
+      const part = res.parts.find((p: any) => p.which === 'TEXT');
 
       if (!part || !part.body || typeof part.body !== 'string') {
         console.warn('⚠️ Skipping malformed email part:', part);
@@ -70,7 +73,7 @@ async function fetchUnreadEmails() {
 
       const parsed = await simpleParser(part.body);
 
-      const attachments = parsed.attachments?.map(att => ({
+      const attachments = parsed.attachments?.map((att: any) => ({
         filename: att.filename,
         contentType: att.contentType,
         size: att.size
@@ -99,4 +102,4 @@ async function fetchUnreadEmails() {
   }
 }
 
-export default fetchUnreadEmails;
+export { fetchUnreadEmails };
