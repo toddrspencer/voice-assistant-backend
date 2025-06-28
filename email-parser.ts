@@ -1,6 +1,4 @@
-import imapsPkg from 'imap-simple';
-const { default: imaps } = imapsPkg as any;
-
+const imaps = require('imap-simple') as typeof import('imap-simple');
 import { simpleParser } from 'mailparser';
 import * as dotenv from 'dotenv';
 dotenv.config();
