@@ -15,13 +15,13 @@ const config = {
         authTimeout: 10000,
         tlsOptions: {
             servername: 'imap.mail.me.com',
-            rejectUnauthorized: false
-        }
-    }
+            rejectUnauthorized: false,
+        },
+    },
 };
 function classifyIntent(text) {
     const lowered = text.toLowerCase();
-    if (lowered.includes('calendar') || lowered.match(/\b(meeting|appointment|schedule|event)\b/))
+    if (lowered.includes('calendar') || /\b(meeting|appointment|schedule|event)\b/.test(lowered))
         return 'calendar_event';
     if (lowered.includes('unsubscribe') || lowered.includes('marketing'))
         return 'marketing';
@@ -35,9 +35,9 @@ function classifyIntent(text) {
 }
 function isUnimportant(email) {
     const lowPrioritySenders = ['newsletter', 'noreply', 'no-reply'];
-    return lowPrioritySenders.some(tag => email.from.toLowerCase().includes(tag)) ||
+    return (lowPrioritySenders.some(tag => email.from.toLowerCase().includes(tag)) ||
         email.subject.toLowerCase().includes('sale') ||
-        email.intent === 'marketing';
+        email.intent === 'marketing');
 }
 async function fetchUnreadEmails() {
     try {
@@ -49,25 +49,26 @@ async function fetchUnreadEmails() {
         const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
         const filteredResults = results.filter((res) => {
             const headerPart = res.parts.find((p) => p.which === 'HEADER');
-            if (!headerPart?.body || typeof headerPart.body !== 'string')
+            if (!headerPart || !headerPart.body)
                 return false;
-            const dateMatch = headerPart.body.match(/Date: (.+)/i);
+            const raw = typeof headerPart.body === 'string' ? headerPart.body : JSON.stringify(headerPart.body);
+            const dateMatch = raw.match(/Date:\s*(.+)/i);
             if (!dateMatch)
                 return false;
-            const parsedDate = new Date(dateMatch[1]);
-            return !isNaN(parsedDate.getTime()) && parsedDate.getTime() >= twentyFourHoursAgo;
+            const parsedDate = new Date(dateMatch[1].trim());
+            return parsedDate.getTime() > twentyFourHoursAgo;
         });
         const emails = await Promise.all(filteredResults.map(async (res) => {
-            const part = res.parts.find((p) => p.which === 'TEXT');
-            if (!part || !part.body || typeof part.body !== 'string') {
-                console.warn('⚠️ Skipping malformed email part:', part);
+            const textPart = res.parts.find((p) => p.which === 'TEXT');
+            if (!textPart || !textPart.body || typeof textPart.body !== 'string') {
+                console.warn('⚠️ Skipping malformed email part:', textPart);
                 return null;
             }
-            const parsed = await simpleParser(part.body);
-            const attachments = parsed.attachments?.map((att) => ({
+            const parsed = await simpleParser(textPart.body);
+            const attachments = parsed.attachments?.map(att => ({
                 filename: att.filename,
                 contentType: att.contentType,
-                size: att.size
+                size: att.size,
             })) || [];
             const email = {
                 from: parsed.from?.text || '',
@@ -77,7 +78,7 @@ async function fetchUnreadEmails() {
                 hasAttachments: attachments.length > 0,
                 attachments,
                 intent: classifyIntent(parsed.text || ''),
-                isUnimportant: false
+                isUnimportant: false,
             };
             email.isUnimportant = isUnimportant(email);
             return email;

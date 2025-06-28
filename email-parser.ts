@@ -16,14 +16,14 @@ const config: ImapSimpleOptions = {
     authTimeout: 10000,
     tlsOptions: {
       servername: 'imap.mail.me.com',
-      rejectUnauthorized: false
-    }
-  }
+      rejectUnauthorized: false,
+    },
+  },
 };
 
 function classifyIntent(text: string): string {
   const lowered = text.toLowerCase();
-  if (lowered.includes('calendar') || lowered.match(/\b(meeting|appointment|schedule|event)\b/)) return 'calendar_event';
+  if (lowered.includes('calendar') || /\b(meeting|appointment|schedule|event)\b/.test(lowered)) return 'calendar_event';
   if (lowered.includes('unsubscribe') || lowered.includes('marketing')) return 'marketing';
   if (lowered.includes('invoice') || lowered.includes('payment')) return 'finance';
   if (lowered.includes('attachment') || lowered.includes('.pdf')) return 'document';
@@ -31,11 +31,13 @@ function classifyIntent(text: string): string {
   return 'general';
 }
 
-function isUnimportant(email: any): boolean {
+function isUnimportant(email: { from: string; subject: string; intent: string }): boolean {
   const lowPrioritySenders = ['newsletter', 'noreply', 'no-reply'];
-  return lowPrioritySenders.some(tag => email.from.toLowerCase().includes(tag)) ||
-         email.subject.toLowerCase().includes('sale') ||
-         email.intent === 'marketing';
+  return (
+    lowPrioritySenders.some(tag => email.from.toLowerCase().includes(tag)) ||
+    email.subject.toLowerCase().includes('sale') ||
+    email.intent === 'marketing'
+  );
 }
 
 async function fetchUnreadEmails(): Promise<any[]> {
@@ -51,45 +53,47 @@ async function fetchUnreadEmails(): Promise<any[]> {
 
     const filteredResults = results.filter((res: any) => {
       const headerPart = res.parts.find((p: any) => p.which === 'HEADER');
-      if (!headerPart?.body || typeof headerPart.body !== 'string') return false;
+      if (!headerPart || !headerPart.body) return false;
 
-      const dateMatch = headerPart.body.match(/Date: (.+)/i);
+      const raw = typeof headerPart.body === 'string' ? headerPart.body : JSON.stringify(headerPart.body);
+      const dateMatch = raw.match(/Date:\s*(.+)/i);
       if (!dateMatch) return false;
 
-      const parsedDate = new Date(dateMatch[1]);
-      return !isNaN(parsedDate.getTime()) && parsedDate.getTime() >= twentyFourHoursAgo;
+      const parsedDate = new Date(dateMatch[1].trim());
+      return parsedDate.getTime() > twentyFourHoursAgo;
     });
 
-    const emails = await Promise.all(filteredResults.map(async (res: any) => {
-      const part = res.parts.find((p: any) => p.which === 'TEXT');
+    const emails = await Promise.all(
+      filteredResults.map(async (res: any) => {
+        const textPart = res.parts.find((p: any) => p.which === 'TEXT');
+        if (!textPart || !textPart.body || typeof textPart.body !== 'string') {
+          console.warn('⚠️ Skipping malformed email part:', textPart);
+          return null;
+        }
 
-      if (!part || !part.body || typeof part.body !== 'string') {
-        console.warn('⚠️ Skipping malformed email part:', part);
-        return null;
-      }
+        const parsed = await simpleParser(textPart.body);
 
-      const parsed = await simpleParser(part.body);
+        const attachments = parsed.attachments?.map(att => ({
+          filename: att.filename,
+          contentType: att.contentType,
+          size: att.size,
+        })) || [];
 
-      const attachments = parsed.attachments?.map((att: any) => ({
-        filename: att.filename,
-        contentType: att.contentType,
-        size: att.size
-      })) || [];
+        const email = {
+          from: parsed.from?.text || '',
+          subject: parsed.subject || '',
+          date: parsed.date || '',
+          text: parsed.text || '',
+          hasAttachments: attachments.length > 0,
+          attachments,
+          intent: classifyIntent(parsed.text || ''),
+          isUnimportant: false,
+        };
 
-      const email = {
-        from: parsed.from?.text || '',
-        subject: parsed.subject || '',
-        date: parsed.date || '',
-        text: parsed.text || '',
-        hasAttachments: attachments.length > 0,
-        attachments,
-        intent: classifyIntent(parsed.text || ''),
-        isUnimportant: false
-      };
-
-      email.isUnimportant = isUnimportant(email);
-      return email;
-    }));
+        email.isUnimportant = isUnimportant(email);
+        return email;
+      })
+    );
 
     await connection.end();
     return emails.filter(Boolean); // Remove nulls
