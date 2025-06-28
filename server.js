@@ -8,7 +8,8 @@ import { fetchUnreadEmails } from './email-parser.js';
 dotenv.config();
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001; // Railway uses dynamic ports
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -61,5 +62,8 @@ app.post('/api/create-web-call', async (req, res) => {
 
 // 🚀 Launch server
 app.listen(port, () => {
-  console.log(`🚀 Retell backend listening at http://localhost:${port}`);
+  const url = isProduction
+    ? 'on Railway (env PORT used)'
+    : `http://localhost:${port}`;
+  console.log(`🚀 Retell backend listening at ${url}`);
 });
