@@ -1,4 +1,5 @@
-import * as imaps from 'imap-simple';
+import imapsPkg from 'imap-simple';
+const { default: imaps } = imapsPkg;
 import { simpleParser } from 'mailparser';
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -21,10 +22,10 @@ const config = {
 };
 function classifyIntent(text) {
     const lowered = text.toLowerCase();
-    if (lowered.includes('calendar') || lowered.match(/\b(meeting|appointment|schedule|event)\b/))
-        return 'calendar_event';
     if (lowered.includes('unsubscribe') || lowered.includes('marketing'))
         return 'marketing';
+    if (lowered.includes('calendar') || lowered.match(/\b(meeting|appointment|schedule|event)\b/))
+        return 'calendar_event';
     if (lowered.includes('invoice') || lowered.includes('payment'))
         return 'finance';
     if (lowered.includes('attachment') || lowered.includes('.pdf'))
@@ -64,6 +65,7 @@ async function fetchUnreadEmails() {
                 return null;
             }
             const parsed = await simpleParser(part.body);
+            const textContent = (parsed.text || '').replace(/\s+/g, ' ').trim();
             const attachments = parsed.attachments?.map(att => ({
                 filename: att.filename,
                 contentType: att.contentType,
@@ -73,10 +75,10 @@ async function fetchUnreadEmails() {
                 from: parsed.from?.text || '',
                 subject: parsed.subject || '',
                 date: parsed.date || '',
-                text: parsed.text || '',
+                text: textContent,
                 hasAttachments: attachments.length > 0,
                 attachments,
-                intent: classifyIntent(parsed.text || ''),
+                intent: classifyIntent(textContent),
                 isUnimportant: false
             };
             email.isUnimportant = isUnimportant(email);
