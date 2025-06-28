@@ -1,7 +1,11 @@
-const imaps = require('imap-simple');
 import { simpleParser } from 'mailparser';
 import * as dotenv from 'dotenv';
 dotenv.config();
+// Dynamic import for imap-simple (compatible with ESM)
+const getImaps = async () => {
+    const imaps = await import('imap-simple');
+    return imaps.default;
+};
 const password = process.env.ICLOUD_APP_PASSWORD;
 if (!password)
     throw new Error('Missing ICLOUD_APP_PASSWORD in .env');
@@ -41,6 +45,7 @@ function isUnimportant(email) {
 }
 async function fetchUnreadEmails() {
     try {
+        const imaps = await getImaps();
         const connection = await imaps.connect(config);
         await connection.openBox('INBOX');
         console.log('📥 Connected to INBOX');
