@@ -38,7 +38,7 @@ function isUnimportant(email) {
          email.intent === 'marketing';
 }
 
-// 📥 Main email fetch + extraction
+// 📥 Main email fetch + extraction (only emails from last 24 hours)
 export async function fetchUnreadEmails() {
   try {
     const connection = await imaps.connect({ imap: config.imap });
@@ -49,16 +49,25 @@ export async function fetchUnreadEmails() {
 
     const results = await connection.search(searchCriteria, fetchOptions);
 
-    const emails = await Promise.all(results.map(async res => {
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+    const filteredResults = results.filter(res => {
+      const headerPart = res.parts.find(p => p.which === 'HEADER');
+      const rawHeader = headerPart?.body;
+      const dateMatch = rawHeader?.match(/Date: (.*)/i);
+      if (!dateMatch) return false;
+      const parsedDate = new Date(dateMatch[1]);
+      return parsedDate.getTime() >= twentyFourHoursAgo;
+    });
+
+    const emails = await Promise.all(filteredResults.map(async res => {
       const part = res.parts.find(p => p.which === 'TEXT');
       const parsed = await simpleParser(part.body);
 
-      // 📎 Extract attachment metadata
       const attachments = parsed.attachments?.map(att => ({
         filename: att.filename,
         contentType: att.contentType,
         size: att.size
-        // content: att.content.toString('base64') // ⛔ only if needed
       })) || [];
 
       const email = {
