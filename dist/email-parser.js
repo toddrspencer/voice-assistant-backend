@@ -39,7 +39,7 @@ function isUnimportant(email) {
         email.subject.toLowerCase().includes('sale') ||
         email.intent === 'marketing';
 }
-export async function fetchUnreadEmails() {
+async function fetchUnreadEmails() {
     try {
         const connection = await imaps.connect(config);
         await connection.openBox('INBOX');
@@ -83,10 +83,11 @@ export async function fetchUnreadEmails() {
             return email;
         }));
         await connection.end();
-        return emails.filter(Boolean);
+        return emails.filter(Boolean); // Remove nulls
     }
     catch (err) {
         console.error('❌ Email fetch failed:', err.message);
         return [];
     }
 }
+export default fetchUnreadEmails;
