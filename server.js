@@ -3,7 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import { fetchUnreadEmails } from './email-parser.js'; // 🔁 NAMED IMPORT
+import fetchUnreadEmails from './email-parser.js'; // ✅ FIXED: default import
 
 dotenv.config();
 
@@ -14,10 +14,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.use(cors());
 app.use(bodyParser.json());
 
+// 🔍 Root health check route
 app.get('/', (req, res) => {
   res.send('✅ Retell backend is running');
 });
 
+// 📩 API route to get unread emails
 app.get('/api/emails', async (req, res) => {
   console.log('📥 /api/emails endpoint hit');
   try {
@@ -30,6 +32,7 @@ app.get('/api/emails', async (req, res) => {
   }
 });
 
+// 🎯 Retell agent creation endpoint
 app.post('/api/create-web-call', async (req, res) => {
   try {
     const response = await fetch('https://api.retellai.com/v2/create-web-call', {
@@ -57,6 +60,7 @@ app.post('/api/create-web-call', async (req, res) => {
   }
 });
 
+// 🚀 Launch server
 app.listen(port, () => {
   const url = isProduction ? 'on Railway (env PORT used)' : `http://localhost:${port}`;
   console.log(`🚀 Retell backend listening at ${url}`);

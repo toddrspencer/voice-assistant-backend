@@ -38,7 +38,7 @@ function isUnimportant(email: any): boolean {
          email.intent === 'marketing';
 }
 
-export async function fetchUnreadEmails(): Promise<any[]> {
+async function fetchUnreadEmails(): Promise<any[]> {
   try {
     const connection: ImapSimple = await imaps.connect(config);
     await connection.openBox('INBOX');
@@ -92,9 +92,11 @@ export async function fetchUnreadEmails(): Promise<any[]> {
     }));
 
     await connection.end();
-    return emails.filter(Boolean);
+    return emails.filter(Boolean); // Remove nulls
   } catch (err: any) {
     console.error('❌ Email fetch failed:', err.message);
     return [];
   }
 }
+
+export default fetchUnreadEmails;
