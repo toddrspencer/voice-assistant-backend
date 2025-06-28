@@ -1,6 +1,6 @@
 import imaps from 'imap-simple';
 import { simpleParser } from 'mailparser';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 const config = {
