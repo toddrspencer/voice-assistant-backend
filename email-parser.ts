@@ -6,6 +6,12 @@ type ImapSimple = import('imap-simple').ImapSimple;
 type Message = import('imap-simple').Message;
 type ImapSimpleOptions = import('imap-simple').ImapSimpleOptions;
 
+// Dynamic import for imap-simple (compatible with ESM)
+const getImaps = async () => {
+  const imaps = await import('imap-simple');
+  return imaps.default;
+};
+
 const password = process.env.ICLOUD_APP_PASSWORD;
 if (!password) throw new Error('Missing ICLOUD_APP_PASSWORD in .env');
 
@@ -43,7 +49,7 @@ function isUnimportant(email: any): boolean {
 
 async function fetchUnreadEmails(): Promise<any[]> {
   try {
-    const imaps = (await import('imap-simple')).default;
+    const imaps = await getImaps();
     const connection: ImapSimple = await imaps.connect(config);
     await connection.openBox('INBOX');
     console.log('📥 Connected to INBOX');
