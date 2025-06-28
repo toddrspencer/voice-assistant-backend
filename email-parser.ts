@@ -21,7 +21,6 @@ const config: ImapSimpleOptions = {
   }
 };
 
-// 🧠 Pre-LLM keyword-based categorization (basic intent matching)
 function classifyIntent(text: string): string {
   const lowered = text.toLowerCase();
   if (lowered.includes('calendar') || lowered.match(/\b(meeting|appointment|schedule|event)\b/)) return 'calendar_event';
@@ -32,7 +31,6 @@ function classifyIntent(text: string): string {
   return 'general';
 }
 
-// 🧹 Basic unimportance logic
 function isUnimportant(email: any): boolean {
   const lowPrioritySenders = ['newsletter', 'noreply', 'no-reply'];
   return lowPrioritySenders.some(tag => email.from.toLowerCase().includes(tag)) ||
@@ -40,8 +38,7 @@ function isUnimportant(email: any): boolean {
          email.intent === 'marketing';
 }
 
-// 📥 Main email fetch + extraction (only emails from last 24 hours)
-async function fetchUnreadEmails(): Promise<any[]> {
+export async function fetchUnreadEmails(): Promise<any[]> {
   try {
     const connection: ImapSimple = await imaps.connect(config);
     await connection.openBox('INBOX');
@@ -95,11 +92,9 @@ async function fetchUnreadEmails(): Promise<any[]> {
     }));
 
     await connection.end();
-    return emails.filter(Boolean); // Remove nulls
+    return emails.filter(Boolean);
   } catch (err: any) {
     console.error('❌ Email fetch failed:', err.message);
     return [];
   }
 }
-
-export default fetchUnreadEmails;

@@ -19,7 +19,6 @@ const config = {
         }
     }
 };
-// 🧠 Pre-LLM keyword-based categorization (basic intent matching)
 function classifyIntent(text) {
     const lowered = text.toLowerCase();
     if (lowered.includes('calendar') || lowered.match(/\b(meeting|appointment|schedule|event)\b/))
@@ -34,15 +33,13 @@ function classifyIntent(text) {
         return 'important';
     return 'general';
 }
-// 🧹 Basic unimportance logic
 function isUnimportant(email) {
     const lowPrioritySenders = ['newsletter', 'noreply', 'no-reply'];
     return lowPrioritySenders.some(tag => email.from.toLowerCase().includes(tag)) ||
         email.subject.toLowerCase().includes('sale') ||
         email.intent === 'marketing';
 }
-// 📥 Main email fetch + extraction (only emails from last 24 hours)
-async function fetchUnreadEmails() {
+export async function fetchUnreadEmails() {
     try {
         const connection = await imaps.connect(config);
         await connection.openBox('INBOX');
@@ -86,11 +83,10 @@ async function fetchUnreadEmails() {
             return email;
         }));
         await connection.end();
-        return emails.filter(Boolean); // Remove nulls
+        return emails.filter(Boolean);
     }
     catch (err) {
         console.error('❌ Email fetch failed:', err.message);
         return [];
     }
 }
-export default fetchUnreadEmails;
