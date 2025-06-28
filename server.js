@@ -3,7 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import { fetchUnreadEmails } from './email-parser.js';
+import { fetchUnreadEmails } from './email-parser.ts';
 
 dotenv.config();
 
