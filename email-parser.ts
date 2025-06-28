@@ -102,4 +102,4 @@ async function fetchUnreadEmails(): Promise<any[]> {
   }
 }
 
-export { fetchUnreadEmails };
+export default fetchUnreadEmails;
